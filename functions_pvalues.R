@@ -26,15 +26,55 @@
 #  For empirical p value with Monte Carlo see  [2] 
 #  The standard probability density is presented in [3] 
 #  The simulation GGMs with the optimal shrinkage (lambda)
-#  is performed with GeneNet [Schäfer,J. and Strimmer,K. (2005a),  GeneNet 1.2.13. CRAN.]
+#  is performed with GeneNet [Sch?fer,J. and Strimmer,K. (2005a),  GeneNet 1.2.13. CRAN.]
 #************************************************************************;
 # Refererences
-# [1] Schäfer,J. and Strimmer,K. A Shrinkage Approach to Large-Scale Covariance Matrix Estimation and Implications for Functional Genomics. Stat. Appl. Genet. Mol. Biol.(2005a), 4, 1175-1189.
+# [1] Sch?fer,J. and Strimmer,K. A Shrinkage Approach to Large-Scale Covariance Matrix Estimation and Implications for Functional Genomics. Stat. Appl. Genet. Mol. Biol.(2005a), 4, 1175-1189.
 # [2] Martinez, Wendy L., and Angel R. Martinez. Computational statistics handbook with MATLAB. Chapman and Hall/CRC (2007)
 # [3] Fisher, Ronald Aylmer. "The distribution of the partial correlation coefficient." Metron 3 (1924): 329-332.
 #**************************************************
-# 1. p values from the SHRUNK density
+library(stats4)
 
+# 1. p values from the SHRUNK density
+pcor.function = function(d, lambda, corrected = T){
+  
+  R = cor(d)
+  
+  if(corrected == T){
+    
+    R = sm2vec(R)*(1 + (sm2vec(R)^2)/2/(nrow(d)-1))
+    R = vec2sm(R)
+    diag(R) = 1
+    
+  }
+  
+  C = (1-lambda)*(R)+(lambda)*diag(diag(R)) # shrinkage
+  D = chol(x = C) # Cholebsky decomposition
+  omega.chol = solve(D, diag(ncol(d))) %*% solve(t(D), diag(ncol(d)))# precision matrix
+  
+  if(lambda!= 0){
+    
+    chol.PCOR = -cov2cor( omega.chol )#/(1-z)
+    
+  } else{ 
+    
+    chol.PCOR =  -cov2cor( omega.chol ) 
+  }
+  
+  
+  # if(corrected == T){
+  # 
+  #   chol.PCOR = sm2vec(chol.PCOR)*(1 + (sm2vec(chol.PCOR)^2)/2/k.shrunk(p=ncol(d) , n=nrow(d), lambda=z))
+  #   chol.PCOR = vec2sm(chol.PCOR)
+  # 
+  # }
+  
+  
+  diag(chol.PCOR) = 1
+  
+  return(chol.PCOR)
+  
+}
 # Simulate a GGM under the null hypothesis.
 # Use this to estimate the degrees of freedom k
 # for the shrunk probability density 
@@ -43,7 +83,7 @@ k.shrunk <- function( p , n,lambda){
   ## Start by simulating null hypothetic data
   sim.pcor.S <- ggm.simulate.pcor(p, 0) # simulate identity GGM
   sim.data.S <- ggm.simulate.data( n, sim.pcor.S) # data from identity GGM (sim.pcor.S)
-  GGM.S <- pcor.shrink(sim.data.S,lambda , verbose =FALSE)  ## infer GGM structure from sim.data.S
+  GGM.S <- pcor.function(d = sim.data.S, lambda = lambda)#pcor.shrink(sim.data.S,lambda , verbose =FALSE)  ## infer GGM structure from sim.data.S
   r.S <- sm2vec(GGM.S) # vectorize the GGM (symmetric matrix)
   
   # compute the negative log likelihood
@@ -62,6 +102,7 @@ k.shrunk <- function( p , n,lambda){
   #k.fit.shrunk <-  mle(minuslogl = nlogL.shrunk, start = list(k = 100),method = "BFGS")
   #k.fit.shrunk <-  mle(nlogL.shrunk, start = list(k = 100), method = "Nelder-Mead")
   return(k.fit.shrunk@coef[1])}
+
 
 p.shrunk <- function( r, p, n ,lambda){
         
@@ -131,7 +172,7 @@ p.shrunk <- function( r, p, n ,lambda){
       for (i in 1:number){
         
         r.data <- ggm.simulate.data(n,diag(p))
-        r.monte.GGM <- ggm.estimate.pcor(r.data, lambda=lambda , verbose = FALSE )
+        r.monte.GGM <- pcor.function(d = r.data, lambda = lambda) #ggm.estimate.pcor(r.data, lambda=lambda , verbose = FALSE )
         r.monte <- sm2vec(r.monte.GGM)
         
         # compare the real coefficients against r.monte  

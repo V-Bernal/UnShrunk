@@ -1,52 +1,38 @@
-#|**********************************************************************;
-#  This script reproduces the results in
-#  * Project: UN-SHRINKING THE PARTIAL CORRELATION IN GAUSSIAN GRAPHICAL MODELS (Bernal et al).
-#  * Author            : Victor Bernal*, Rainer Bischoff, Victor Guryev, Marco Grzegorczyk, Peter Horvatovich
-#  * Date created      : 2019-06-24 (yyy-mm-dd)
-#************************************************************************
-# Parameters
-# * p = Number of variables (e.g. genes)
-# * n = Number of samples
-# * number= Montecarlo iterations
-# * rep = Times to repeat the simulation (for fixed p, n)
+#------------------
+# - Title/Project: Rebuttal to the reviewers / The "un-shrunk" partial correlation in Gaussian Graphical Models 
+# - Author            : Victor Bernal*, Rainer Bischoff, Victor Guryev, Peter Horvatovich, Marco Grzegorczyk.
+# - Date created      : 24 JUN 2019
+# - Revision History  : 24 MAY 2021
+#------------------
+# Description:
+# This scripts contains the analysis for the rebuttal note to the reviewers of BMC bioinformatics
+#------------------
+# Variables:
+# - data = data matrix with p columns and n rows
+# - p = number of variables (e.g. genes)
+# - n = sample size
+# - lambda = shrinkage value
+# - number= Montecarlo iterations
+# - rep = Times to repeat the simulation (for fixed p, n)
 #
-# * etaA = proportion of TP
-# * alpha = significance level
-# * eta0 = 1-etaA
-#************************************************************************
-#  * Revision History  : 2020-02-26 (yyy-mm-dd)
-#  **********************************************************************
-#  * Details
-#  The simulation of data, as well as estimation with the optimal shrinkage (lambda) is done with
-#  [Sch?fer, J. and Strimmer, K. (2005a),  GeneNet 1.2.13. CRAN.]
-#
-#************************************************************************;
-#----------------------------------------
-## Install packages
-#if (!requireNamespace("BiocManager", quietly = TRUE))
-#install.packages("BiocManager")
-# BiocManager::install("STRINGdb")
-# if (!requireNamespace("BiocManager", quietly = TRUE))
-#   install.packages("BiocManager")
-# 
-# BiocManager::install("limma""
-# pkg = c("GeneNet",
-#         "ggplot2",
-#         "igraph",
-#         "stats4",
-#         "limma",
-#         "STRINGdb")
-# new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
-# if (length(new.pkg)) 
-#   install.packages(new.pkg, dependencies = TRUE)
-# sapply(pkg, require, character.only = TRUE)
-#-----------------------------------------------------
+# - etaA = proportion of TP
+# - alpha = significance level
+#-----------------
+# Notes: 
+# - d a is a n x p matrix of data 
+# - the p columns of d are the random variables 
+# - the n rows of d are samples
+#-----------------
+# References
+# [1] Sch?fer,J. and Strimmer,K. A Shrinkage Approach to Large-Scale Covariance Matrix Estimation and Implications for Functional Genomics. Stat. Appl. Genet. Mol. Biol.(2005a), 4, 1175-1189.
+#------------------
 
 sessionInfo()
 
-#........................................
-# 1) Analytical results:The shrinkage shifts the Eigenvalues, but the Eigenvectors stay the same.
-#........................................
+#------------------
+# 1) Analytical results:
+#   The shrinkage shifts the Eigenvalues, but the Eigenvectors stay the same.
+#------------------
 
 rm(list = ls())
 
@@ -99,7 +85,6 @@ ievals <- data.frame(sort(ainvL), 1 / ((1 - lambda) * a + lambda))
 colnames(ievals) <- c("Numerical", "Analytical Eq.")
 ievals
 
-
 cumsum(ainv) / sum(ainv)
 cumsum(ainvL) / sum(ainvL)
 
@@ -129,9 +114,9 @@ sum(c(SymInv - solve(shrunk_cor)))
 
 
 
-#........................................
+#------------------
 # 2) Figure 1. The order of the partial correlations changes with lambda: Toy example
-#........................................
+#------------------
 
 library(GeneNet)
 library(stats4)
@@ -140,16 +125,14 @@ library("devEMF")
 # Correlation matrix
 m <- matrix(c(
   1,
-  1 / 2,-1 / 4,-1 / 8,
-  1 / 2,
-  1,-3 / 4,-3 / 4,-1 / 4,-3 / 4,
+  1/2, -1/4, -1/8,
+  1/2,
+  1, -3/4, -3/4, -1/4, -3/4,
   1,
-  3 / 4,-1 / 8,-3 / 4,
-  3 / 4,
-  1
-),
-4,
-4)
+  3/4, -1/8, -3/4,
+  3/4,
+  1 ), nrow = 4, ncol = 4
+)
 # The toy matrix has eigenvalues, 2-norm condition number, and the real partial correlation 
 m
 solve(m)*97
@@ -159,7 +142,7 @@ kappa(m)
 pcor0 <- sm2vec(cor2pcor(m))
 
 # Reconstruct the shrunk partial correlations
-lambda <- c(1:20) / 20
+lambda <- c(1:40) / 40
 
 pcors <- lapply(lambda , function(z) {
   return(sm2vec(cor2pcor((1 - z) * m + z * diag(ncol(
@@ -172,15 +155,15 @@ pcors <-
   matrix(unlist(pcors), 0.5 * ncol(m) * (ncol(m) - 1), length(lambda))
 
 
-#emf(file = paste0("Figure1_a.emf"), width = 5, height = 5 )
+emf(file = paste0("Figure1_a.emf"), width = 5, height = 5 )
 
   plot.ts(
     t(pcors),
     plot.type = "single",
     type = "l",
-    lw = 4,
-    lty = c(1:2),
-    col = "grey40",# rainbow(0.5 * ncol(m) * (ncol(m) - 1)),
+    lw = 3,
+    lty = 1,
+    col = c("grey40","grey30"),# rainbow(0.5 * ncol(m) * (ncol(m) - 1)),
     ylab = "partial correlation",
     xlab = "LW - shrinkage",
     ylim = c(-1, 1),
@@ -193,7 +176,7 @@ pcors <-
     pch = 20,
     cex = 2,#,
     bg="grey",
-    col = "grey40"# rainbow(0.5 * ncol(m) * (ncol(m) - 1))
+    col = c("grey40","grey30")# rainbow(0.5 * ncol(m) * (ncol(m) - 1))
   )
   axis(2)
   axis(1,
@@ -204,23 +187,25 @@ pcors <-
          length.out = length(lambda)
        ))
   box()
-#dev.off()
+dev.off()
   
 # Compare with Glasso
-#library(huge)
+library(huge)
 
 pcors <- huge(m, method = "glasso", lambda =sort(lambda))
 pcors <-sapply(pcors$icov, function(x){ - sm2vec(cov2cor(x))})  
 pcors <-
   matrix(unlist(pcors), 0.5 * ncol(m) * (ncol(m) - 1), length(lambda))
 
+emf(file = paste0("Figure_S1_a.emf"), width = 5, height = 5 )
+
 plot.ts(
   t(pcors),
   plot.type = "single",
   type = "l",
   lw = 4,
-  lty = c(1:2),#,1:2,
-  col = rainbow(0.5 * ncol(m) * (ncol(m) - 1)), #"grey40",
+  lty = 1,
+  col = c("grey40","grey30"),
   ylab = "partial correlation",
   xlab = "glasso shrinkage",
   ylim = c(-1, 1),
@@ -233,7 +218,7 @@ points(
   pch = 20,
   cex = 2,#,
   bg="grey",
-  col = rainbow(0.5 * ncol(m) * (ncol(m) - 1))
+  col = c("grey40","grey30")
 )
 axis(2)
 axis(1,
@@ -244,11 +229,11 @@ axis(1,
        length.out = length(lambda)
      ))
 box()
+dev.off()
 
-
-#......................................
-# Figure 2: shrinking the correlation is equivalent to shrinking the data
-# ......................................
+#------------------
+# Figure 2.: shrinking the correlation is equivalent to shrinking the data
+#------------------
 
 rm(list=ls())
 
@@ -259,7 +244,7 @@ library("devEMF")
 set.seed(123)
 
 # Check pcor between node 2 and node 6
-p = 10
+p = 8
 n = 10
 etaA = 0.1
 true.pcor <- ggm.simulate.pcor(p, etaA = etaA)
@@ -302,11 +287,12 @@ min_L = 0
     #   
     # }
 # un-comment to print/save the plot
-#emf(file = paste0("Figure1_b.emf"), width = 5, height = 5 )
+
+emf(file = paste0("Figure1_b.emf"), width = 5, height = 5 )
 
   plot(x = anim.shrunk.data(0)[,2], y = anim.shrunk.data(0)[,3], 
         xlim = max(abs(anim.shrunk.data(0)[,2]))*c(-1.2, 1.5), 
-        ylim = max(abs(anim.shrunk.data(0)[,3]))*c(-1.2, 0.8),
+        ylim = max(abs(anim.shrunk.data(0)[,3]))*c(-1.5, 0.8),
         xlab="node 1", ylab="node 2",  
         cex= 1.75 , pch= 20)
   
@@ -331,17 +317,9 @@ min_L = 0
 
 dev.off()
 
-
-
-    
-#...................
-# Toy example: polynomial approximation to the limit works well
-#..................
-
-
-#p=50
-#n=40
-#eta 0.04
+#------------------
+# Extra: Toy example. The approximation to the limit works well
+#------------------
 rm(list=ls())
 
 library("GeneNet")
@@ -349,98 +327,90 @@ library("GeneNet")
 source("functions_Unshrink.R")
 
 p = 10
-n =  30
+n =  10
+
 set.seed(1)
-TrueNet = ggm.simulate.pcor(num.nodes = p, etaA = 0.01)
+
+TrueNet = ggm.simulate.pcor(num.nodes = p, etaA = 0.1)
 dat = ggm.simulate.data(sample.size = n, pcor = TrueNet)
 
 opt2 = attr(pcor.shrink(dat, verbose = FALSE), "lambda")
 
-u = unshrink_GGM (dat ,PLOT = TRUE)
+unshrink_GGM (dat ,PLOT = TRUE, l_0 = 0.01 ,corrected = F)
 points(y=sm2vec(pcor.shrink(dat))/(1-opt2), x=rep(0.5, length(sm2vec(TrueNet))), 
        cex=1.2, pch="*", col= rainbow(n = length(sm2vec(TrueNet)) ))
-
-# test= 1/(opt2 + (1-opt2)/sm2vec(pcor.shrink(dat)))
-# plot(test-u)
-
 text(x=0.5, y=1,"scaled")
 text(x=0.2, y=-0.8,"ordered")
 
-max(abs(u))
-sum(abs(u- sm2vec(TrueNet)))
-plot(u, sm2vec(pcor.shrink(dat))/(1-opt2))
-
-#..................................................................     
+#------------------    
 # Figure 3. Trend plot: Comparison for a range of partial correlations
-#..................................................................
+#------------------
 
 #(i) p=100 with eta 0.003
 #(ii) p=70 , n=50 with eta  
 #(ii) p=50, n=40  with eta 0.01 (change the seed)
 
-
 rm(list=ls())
-               
-library(GeneNet)               
-library(ggplot2)
-library(stats4) 
-library(reshape)
-library(devEMF)
 
-setwd("C:/Users/Victor/Desktop")
+Packages <- c("GeneNet", 
+              "ggplot2", 
+              "reshape", 
+              "stats4", 
+              "devEMF")
+
+lapply(Packages, library, character.only = TRUE)
+
+               
 source("functions_Unshrink.R")
          
                
 set.seed(123)
                
 p <- 100
-n1 <- 40 
-etaA <- 0.003
+n1 <- 70 
+etaA <- 0.004
 
 times = 25
 
-TrueNET <- ggm.simulate.pcor(p, etaA)#ggm.simulate.pcor.MODIF
-det(TrueNET)
+TrueNET <- ggm.simulate.pcor(p, etaA)
 positives.idx <- which(sm2vec(TrueNET)!=0)
 non.positives.idx <- which(sm2vec(TrueNET)==0)   
 
-# the simulated partial correlation
-plot(sm2vec(TrueNET)[positives.idx ] , pch=16 , ylab='partial correlations')
-text(x = 3, y = 0, labels = paste0('# pcors= ',length(positives.idx)) , cex = 1)
 
-shrunk.pos <- c()
-unshrunk.pos <- c()
-shrunk.neg <- c()
-unshrunk.neg <- c()
-shrunk.pos.se <- c()
-unshrunk.pos.se <- c()
-shrunk.neg.se <- c()
-unshrunk.neg.se <- c()
-pval.shrunk<- c()
-pval.unshrunk<- c()
-opt.lambdas.mean<-c()
-           
+shrunk.pos<-  unshrunk.pos<-
+              shrunk.neg<-
+              unshrunk.neg<-
+              shrunk.pos.se<-
+              unshrunk.pos.se<-
+              shrunk.neg.se<-
+              unshrunk.neg.se<-
+              pval.shrunk<-
+              pval.unshrunk<-
+              opt.lambdas.mean<-c()
+
 
 for (samples in 1:length(n1)) {
   
    cat("p=", p , "n=", n1[samples], "\n")
-                 
+  
+    # simulate data             
    sim.data1 <-
      lapply(c(1:times), function(x) {
            ggm.simulate.data(n1[samples] , TrueNET)
             })
-                 
+                 # shrunk
                  GGM1.shrunk <-
                    lapply(sim.data1, function(x) {
                      sm2vec(pcor.shrink(x, verbose = FALSE))
                    })
                  
+                 # optimal lambdas
                  opt.lambdas <-
                    lapply(sim.data1, function(x) {
                      return(attr(pcor.shrink(x, verbose = FALSE), "lambda"))
                    })
                  
-                 
+                 # if any lambda was 1, substitute the simulation
                  while (sum(unlist(opt.lambdas) == 1)) {
                        sim.data1 <-
                          lapply(c(1:times), function(x) {
@@ -458,12 +428,14 @@ for (samples in 1:length(n1)) {
                        
                  }
                  
+                 # unshrunk
                  unshrunk1 <-
                    lapply(sim.data1, function(x) {
-                     unshrink_GGM (x, PLOT = FALSE)
+                     unshrink_GGM (x, PLOT = FALSE, l_0 =0.01 , corrected = F)
                    })
                  max(abs(unlist(unshrunk1)))
-
+                 
+                 # Means
                  shrunk.pos <-
                    cbind(shrunk.pos, rowMeans(sapply(GGM1.shrunk, function(x) {
                      x[positives.idx]
@@ -577,15 +549,16 @@ fig<-ggplot(data = df_fin,  aes(x = Label, y = ave, group = Method, colour = Met
         scale_fill_manual(values= c( rgb(0.5, 0.5, 0.5, 0.75), rgb(0.25, 0.25, 0.25, 0.1) , rgb(0, 0, 0, 0.1) )) +
         scale_y_continuous(limits =c(-1, 1) ,breaks = round(seq(-1, 1, by = 0.2),1))+
         scale_linetype_manual(values=c("dashed", "dashed", "solid"))
-#expression("\u03BB")
+
+
 fig + annotate(geom="text", x= 2, y= 0.85, label = paste0("lambda = ", signif(opt.lambdas.mean[sample.idx],2) ),
                  color="black", size=5 ) +
-     annotate(geom="text", x= 2, y= 0.7, label = paste0("n = ",n1[sample.idx]),
+      annotate(geom="text", x= 2, y= 0.7, label = paste0("n = ",n1[sample.idx]),
                  color="black", size=5)+ 
-    annotate(geom="text", x= 2, y= 0.55, label = paste0("p = ", p ),
+      annotate(geom="text", x= 2, y= 0.55, label = paste0("p = ", p ),
                                                   color="black", size=5 ) +
-   geom_hline(yintercept = 0, linetype="solid", color = "grey")+
-  labs(x ="Actual pcor", y = "Inferred pcor")
+      geom_hline(yintercept = 0, linetype="solid", color = "grey")+
+      labs(x ="Actual pcor", y = "Inferred pcor")
 
 
 #emf(file = paste0("Figure3_p",p,"n",n1,".emf"), width = 7, height = 5 )
@@ -600,42 +573,34 @@ fig + annotate(geom="text", x= 2, y= 0.85, label = paste0("lambda = ", signif(op
 dev.off()
 
 
-
-
-##.............................................................    
+#------------------   
 # Figure 4: Distance to the actual value
-##.............................................................
+#------------------
 
-rm(list = ls())
+rm(list=ls())
 
-library(GeneNet)
-library(reshape)
-library(ggplot2)
-library(stats4)
-library(Hmisc)
-library(reshape2)
-library(devEMF)
+Packages <- c("GeneNet", 
+              "ggplot2", 
+              "huge", 
+              "stats4", 
+              "devEMF",
+              "reshape",
+              "Hmisc",
+              "reshape2")
 
-setwd("C:/Users/Victor/Desktop")
+lapply(Packages, library, character.only = TRUE)
+
 source("functions_Unshrink.R")
 
-# modified ggm pcor
+#-----------------------------------------
+# This is a modified version of function ggm.simulate.pcor (GeneNet)
+# It simulates a network with fixed number (instead of of percentage) of edges
 ggm.simulate.pcor.modified = function (num.nodes, num.edges) {
     eps = 1e-04
-    #num.edges = num.nodes * (num.nodes - 1)/2
-    #num.elements = ceiling(num.edges * etaA)
     element.idx = data.frame('row'= seq(1,  num.edges, 2), 
-                             'col'= 1 + seq(1, num.edges, 2)
-    )
-    #rowIndices + nrow(valueMatrix) * (colIndices - 1)
-    #element.idx = #sample(1:num.edges, num.elements)
+                             'col'= 1 + seq(1, num.edges, 2))
     precision = matrix(0, nrow = num.nodes, ncol = num.nodes)
-    #precision.lo = rep(0, num.edges)
     precision[ cbind(element.idx$row , element.idx$col ) ] = c(-1+2*rbinom(n = 0.5*num.edges, size = 1,  prob = 0.5)) * seq(from = 0.3, to = 5, length.out = 0.5*num.edges ) 
-      #-1+2*rbeta(n = num.edges/2, shape1 = 0.5, shape2 = 0.5)
-      #runif(num.edges/2, -1, +1)
-    #element.idx$row + num.nodes * (element.idx$col - 1)] = runif(num.edges, -1, +1)
-    #precision = matrix(0, nrow = num.nodes, ncol = num.nodes)
     precision[lower.tri(precision)] = 0
     diag(precision)=1
     for (i in 1:(num.nodes - 1)) {
@@ -649,24 +614,16 @@ ggm.simulate.pcor.modified = function (num.nodes, num.edges) {
     pcor = cov2cor(precision)
     return(pcor)
   }
+#-----------------------------------------
 
+set.seed(12)
 
-
-
-
-set.seed(123)
-#p=50, n=40, eta=0.01
-# Initialize parameters
-p<-c( 5 )*10 # num of genes   
-n<-c( 1:9)*10 # num of samples  
-num.edges <- 10# proportion of  TP
+p<-c( 5 )*10   
+n<-c( 1:9)*10   
+num.edges <- 10
 
 all.lambda<-matrix(NA, length(n),length(p)) 
-cat('p=', p , '  n=', n[s.size] , '/n')
 true.pcor<- ggm.simulate.pcor.modified(p, num.edges)
-
-dx = which(true.pcor!=0, arr.ind = TRUE )
-table(dx[, 2])
 
 positives<-which(sm2vec(true.pcor)!= 0)
 negatives<-which(sm2vec(true.pcor) == 0)
@@ -681,7 +638,7 @@ diff.shrunk.pos<-diff.shrunk.SE<-temp
 diff.un.shrunk.pos<-diff.un.shrunk.SE<-temp
 
 for (s.size in 1:length(n)){
-    
+  cat('p=', p , '  n=', n[s.size] , '/n')
     # Average the partial corr over several simulations
     repeated = 10
     
@@ -696,7 +653,7 @@ for (s.size in 1:length(n)){
       assign( paste0('GGM',i)  , pcor.shrink(  null.data, verbose=FALSE  ))
       assign( paste0('r',i)  , sm2vec(pcor.shrink(  null.data, verbose=FALSE  )))
       
-      assign( paste0('UNGGM',i)  , unshrink_GGM (  null.data, PLOT=FALSE  ))
+      assign( paste0('UNGGM',i)  , unshrink_GGM(  null.data, PLOT=FALSE, l_0 = 0.01, corrected = F  ))
       
     }
     
@@ -724,16 +681,16 @@ for (s.size in 1:length(n)){
                                                c(UNGGM9[positives] ),
                                                c(UNGGM10[positives])), na.rm = TRUE)  
     
-    # diff.un.shrunk.SE[ ,s.size]<-(1/sqrt(repeated))* sd(  c(  c(UNGGM1[positives]  ),
-    #                                                                c(UNGGM2[positives] ) ,
-    #                                                                c(UNGGM3[positives] ),
-    #                                                                c(UNGGM4[positives]  ),
-    #                                                                c(UNGGM5[positives] ),
-    #                                                                c(UNGGM6[positives] ),
-    #                                                                c(UNGGM7[positives] ),
-    #                                                                c(UNGGM8[positives] ),
-    #                                                                c(UNGGM9[positives] ),
-    #                                                                c(UNGGM10[positives])))
+    diff.un.shrunk.SE[ ,s.size]<-(1/sqrt(repeated))* sd(  c(  c(UNGGM1[positives]  ),
+                                                                   c(UNGGM2[positives] ) ,
+                                                                   c(UNGGM3[positives] ),
+                                                                   c(UNGGM4[positives]  ),
+                                                                   c(UNGGM5[positives] ),
+                                                                   c(UNGGM6[positives] ),
+                                                                   c(UNGGM7[positives] ),
+                                                                   c(UNGGM8[positives] ),
+                                                                   c(UNGGM9[positives] ),
+                                                                   c(UNGGM10[positives])))
 
     # L1 distance  shrunk   
     diff.shrunk.pos[ ,s.size]<-rowMeans( cbind(  c(r1[positives]  ),
@@ -747,66 +704,64 @@ for (s.size in 1:length(n)){
                                               c(r9[positives] ),
                                               c(r10[positives])), na.rm = TRUE)   
     
-    # diff.shrunk.SE[ ,s.size]<-(1/sqrt(repeated))* sd(  c(  c(r1[positives]  ),
-    #                                                             c(r2[positives] ) ,
-    #                                                             c(r3[positives] ),
-    #                                                             c(r4[positives]  ),
-    #                                                             c(r5[positives] ),
-    #                                                             c(r6[positives] ),
-    #                                                             c(r7[positives] ),
-    #                                                             c(r8[positives] ),
-    #                                                             c(r9[positives] ),
-    #                                                             c(r10[positives])))    
-  #}
+  diff.shrunk.SE[ ,s.size]<-(1/sqrt(repeated))* sd(  c(  c(r1[positives]  ),
+                                                              c(r2[positives] ) ,
+                                                              c(r3[positives] ),
+                                                              c(r4[positives]  ),
+                                                              c(r5[positives] ),
+                                                              c(r6[positives] ),
+                                                              c(r7[positives] ),
+                                                              c(r8[positives] ),
+                                                              c(r9[positives] ),
+                                                              c(r10[positives])))
+  
 
 }
 
-
-#save.image(paste0(p,"distance.R"))
 
 # Shrunk
 df <- melt(diff.shrunk.pos)
 df$rowid <- c(1:length(positives))
 colnames(df) = c('samples', 'partial_correlation', 'rowid')
-df$samples = levels( df$samples, levels = unique(df$samples))
+df$samples = factor( df$samples, levels = unique(df$samples))
+
+diff.shrunk.SE = melt(diff.shrunk.SE)
+diff.shrunk.SE$rowid <- c(1:length(positives))
+colnames(diff.shrunk.SE) = c('samples', 'se', 'rowid')
+diff.shrunk.SE$samples = factor( diff.shrunk.SE$samples, levels = unique(diff.shrunk.SE$samples))
+
+df = merge(df ,diff.shrunk.SE)
+
+
+emf(file = paste0("Figure3_pvsn_S",p,".emf"), width = 7, height = 5 )
 
 fig = ggplot(df, aes(samples, partial_correlation, group = factor(rowid))) +
   
   geom_point(data = df[!c(df$samples=='Actual'),],
-             size = 4, aes(shape = factor(rowid)) , alpha = 0.75)+
+             aes(size = 2*se , shape = factor(rowid)) , alpha = 0.75)+
   
   geom_line(data = df[!c(df$samples=='Actual'),],
-            size = 1.2, linetype = "dotted", alpha = 0.75 )+
+            size = 1, alpha = 0.75 )+
   
   geom_point(data = df[df$samples=='Actual',],
              aes(samples, partial_correlation, shape = factor(rowid)
-             ), size= 3 )+
+             ), size= 4 )+
   
   theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 90, hjust = .5, vjust = .5, face = "plain"),
         axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = 1, vjust = 0, face = "plain"),  
         axis.line = element_line(size = 1, colour = "grey80"),
-        #axis.title =     element_blank(),
         axis.title.x = element_text(color = "grey20", size = 14),
         axis.title.y = element_text(color = "grey20", size = 14),
         panel.border = element_blank(),
         panel.background = element_blank(),
-        panel.grid = element_line(colour = "grey90"),#,
-        #legend.text=element_text(size=14),
-        #legend.title=element_text(size=14),
-        #legend.position = "top",
-        #legend.key = element_rect(fill = "white", colour = "black")
+        panel.grid = element_line(colour = "grey90"),
         legend.position = "none"
   )+
   scale_y_continuous(limits =c(-1, 1) ,breaks = round(seq(-1, 1, by = 0.2),1))+ 
   annotate(geom="text", x= 1, y= 0.55, label = paste0("p = ", p ),
            color="black", size=5 )
 
-
-emf(file = paste0("2_Figure4_shrunk_p",p,".emf"), width = 7, height = 5 )
-
-fig #+  facet_grid( rowid ~ . )# +        
- #scale_linetype_manual(values=c("dashed", "dashed", "solid"))
-
+fig 
 dev.off()
 
 # Un-shrunk 
@@ -815,17 +770,27 @@ df$rowid <- 1:length(positives)
 colnames(df) = c('samples', 'partial_correlation', 'rowid')
 df$samples=as.factor( df$samples )
 
+diff.un.shrunk.SE = melt(diff.un.shrunk.SE)
+diff.un.shrunk.SE$rowid <- c(1:length(positives))
+colnames(diff.un.shrunk.SE) = c('samples', 'se', 'rowid')
+diff.un.shrunk.SE$samples = factor( diff.un.shrunk.SE$samples, levels = unique(diff.un.shrunk.SE$samples))
+
+df = merge(df ,diff.un.shrunk.SE)
+
+
+emf(file = paste0("Figure3_pvsn_US",p,".emf"), width = 7, height = 5 )
+
 fig = ggplot(df, aes(samples, partial_correlation, group = factor(rowid))) +
   
   geom_point(data = df[!c(df$samples=='Actual'),],
-            size = 4, aes(shape = factor(rowid)) , alpha = 0.75)+
+             aes(size = 2*se , shape = factor(rowid)) , alpha = 0.75)+
   
   geom_line(data = df[!c(df$samples=='Actual'),],
-            size = 1.5, linetype = "dotted", alpha = 0.75 )+
+            size = 1, alpha = 0.75 )+
   
   geom_point(data = df[df$samples=='Actual',],
              aes(samples, partial_correlation, shape = factor(rowid)
-             ), size= 3 )+
+             ), size= 4 )+
   
   theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 90, hjust = .5, vjust = .5, face = "plain"),
         axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = 1, vjust = 0, face = "plain"),  
@@ -835,39 +800,31 @@ fig = ggplot(df, aes(samples, partial_correlation, group = factor(rowid))) +
         axis.title.y = element_text(color = "grey20", size = 14),
         panel.border = element_blank(),
         panel.background = element_blank(),
-        panel.grid = element_line(colour = "grey90"),#,
-        #legend.text=element_text(size=14),
-        #legend.title=element_text(size=14),
-        #legend.position = "top",
-        #legend.key = element_rect(fill = "white", colour = "black")
-        legend.position = "none"
-  )+
+        panel.grid = element_line(colour = "grey90"),
+        legend.position = "none") +
   scale_y_continuous(limits =c(-1, 1) ,breaks = round(seq(-1, 1, by = 0.2),1))+ 
   annotate(geom="text", x= 1, y= 0.55, label = paste0("p = ", p ),
            color="black", size=5 )
-
-
-emf(file = paste0("2_Figure4_Unshrunk_p",p,".emf"), width = 7, height = 5 )
 
 fig
 
 dev.off()
 
-#........................................
+#------------------
 # 5) Real data: E. coli example
-#........................................
+#------------------
                
-rm(list = ls())
+rm(list=ls())
+
+Packages <- c("GeneNet", 
+              "ggplot2", 
+              "igraph", 
+              "stats4", 
+              "devEMF",
+              "reshape",
+              "STRINGdb",
+              "limma")
                
-library(GeneNet)
-library(ggplot2)
-library(igraph)
-library(stats4)
-library(limma)
-library(STRINGdb)
-library(devEMF)
-               
-#setwd("/home/victor/Desktop/")
 source("functions_Unshrink.R")
 source("functions_pvalues.R")
 
@@ -882,7 +839,7 @@ ecoli <- scale(ecoli)
 
 
 # Estimate GGM (i.e. the partial correlation coefficients)
-unshrunk.pcor <- unshrink_GGM(ecoli)
+unshrunk.pcor <- unshrink_GGM(d = ecoli,PLOT = F, l_0 =0.01, corrected = F )
 opt.pcor <- sm2vec(pcor.shrink(ecoli))
 opt.lambda <- attr(pcor.shrink(ecoli), "lambda")
 
@@ -929,7 +886,7 @@ fig+scale_x_log10()+ scale_y_log10()
 
 # Compare the p values [2]
 rm(p.UNSHRUNK ,p.opt)
-p.UNSHRUNK <- p.shrunk(unshrunk.pcor, ncol(ecoli), nrow(ecoli), 4e-14)
+p.UNSHRUNK <- p.standard(unshrunk.pcor, ncol(ecoli), nrow(ecoli))
 p.opt <- p.shrunk(opt.pcor, ncol(ecoli), nrow(ecoli), opt.lambda)
             
                id <- sm.index(matrix(0, p , p), diag = FALSE)
@@ -970,9 +927,33 @@ p.opt <- p.shrunk(opt.pcor, ncol(ecoli), nrow(ecoli), opt.lambda)
 
                
 # Plot the network with Benjamini Hochberg adjusted p values
+sum(p.opt < 0.05)
+sum(p.UNSHRUNK < 0.05)
+
+hist(p.opt )
+hist(p.UNSHRUNK, add=T, col=rgb(1, 0, 0, 0.5))
+
 hist(p.adjust(p = p.opt, method = 'BH' ) )
 hist(p.adjust(p = p.UNSHRUNK, method = 'BH' ) , add=T, col=rgb(1, 0, 0, 0.5))
-               
+
+sum(p.adjust(p = p.opt, method = 'BH' ) < 0.05)
+sum(p.adjust(p = p.UNSHRUNK, method = 'BH' ) < 0.05)
+
+res = data.frame('magnitude' = unshrunk.pcor,
+                 'pvalue'= p.standard(r = unshrunk.pcor,
+                                      p = p, n = n)
+)
+res2 = data.frame('magnitude' = opt.pcor,
+                  'pvalue'=  p.shrunk(opt.pcor, ncol(ecoli), nrow(ecoli), opt.lambda))
+
+with(res, plot(magnitude,-log10(pvalue), pch=20, main="Volcano plot",
+               xlim=c(-1,1), ylim=c(0,8),  col=rgb(0,0,0,0.25) ))
+with(res2, points(magnitude,-log10(pvalue), pch=20, main="Volcanoplot",
+                  xlim=c(-1,1), col=rgb(1,0,0,0.15)))
+
+abline(h = -log10(.05), lty=2)
+abline(v = c(-0.1,0.1), lty=2)
+
 GGM <- vec2sm( p.adjust(p = p.opt, method = 'BH' ) < 0.05) +
    2 * vec2sm( p.adjust(p = p.UNSHRUNK, method = 'BH' ) < 0.05)
  diag(GGM) <- 0
@@ -1116,29 +1097,33 @@ plot(
 #       write.table(x = enrichmentKEGG.shrunk , file = 'KEGGecoli_SHRUNK.txt', quote = F, sep = '\t', col.names = T, row.names = F)
        
 
-#.........................................
+#------------------
 # Real data 2: Botomly
-#.........................................
+#------------------
 
-
-rm(list = ls())
+rm(list=ls())
 #BiocManager::install('biomaRt' )
 #BiocManager::install('Biobase' )
 #BiocManager::install('limma' )
-library(GeneNet)  
-library(ggplot2)
-library(Biobase)
-library(limma)
-library(STRINGdb)
-library(devEMF)
 
-setwd("/home/victor/Desktop/")
+Packages <- c("GeneNet", 
+              "ggplot2",
+              "Biobase",
+              "igraph", 
+              "stats4", 
+              "devEMF",
+              "reshape",
+              "STRINGdb",
+              "limma")
+       
+
+
 source("functions_Unshrink.R")
 source("functions_pvalues.R")
 cohen_criteria = 0.1              
 
 pval.cutoff = 0.05
-con =url("http://bowtie-bio.sourceforge.net/recount/ExpressionSets/bottomly_eset.RData")
+con = url("http://bowtie-bio.sourceforge.net/recount/ExpressionSets/bottomly_eset.RData")
 load(file=con)
 close(con)
 
@@ -1229,14 +1214,12 @@ plot(svd1$v[, 1],svd1$v[, 2],xlab = "PC1",ylab = "PC2",
 
 ## Network analysis
 data.norm = t(scale(t(data.norm)))
-unshrunk.pcor <- unshrink_GGM( t(data.norm), PLOT = FALSE)
 opt.pcor <-sm2vec(pcor.shrink( t(data.norm ), verbose = FALSE ))
 opt.lambda <-attr(pcor.shrink( t(data.norm ), verbose = FALSE ),"lambda")
+unshrunk.pcor <- unshrink_GGM( d = t(data.norm), PLOT = FALSE, l_0 = 0.01,corrected = F )
 
 cor(opt.pcor, unshrunk.pcor)
 sum(opt.pcor - unshrunk.pcor)^2
-
-
 
 idx.shrunk = order( abs(opt.pcor) , decreasing = TRUE)
 idx.unshrunk = order( abs(unshrunk.pcor), decreasing = TRUE)
@@ -1280,7 +1263,7 @@ p.opt <- abs(opt.pcor)
             #scale_y_continuous(limits =c(0, 1) ,breaks = round(seq(-1, 1, by = 0.2),1))
           
           
-          emf(file = paste0("MM_scatter.emf"), width = 4, height = 4 )
+          #emf(file = paste0("MM_scatter.emf"), width = 4, height = 4 )
           fig
           dev.off()
           # and
@@ -1290,7 +1273,7 @@ p.opt <- abs(opt.pcor)
 # Compare the p values
 
 rm(p.UNSHRUNK ,p.opt)
-p.UNSHRUNK <- p.shrunk(unshrunk.pcor, ncol(t(data.norm)), nrow(t(data.norm)), 4e-14)
+p.UNSHRUNK <- p.standard(unshrunk.pcor, ncol(t(data.norm)), nrow(t(data.norm)))
 p.opt <- p.shrunk(opt.pcor, ncol(t(data.norm)), nrow(t(data.norm)), opt.lambda)
           
           id <- sm.index(matrix(0, p , p), diag = FALSE)
@@ -1331,11 +1314,28 @@ p.opt <- p.shrunk(opt.pcor, ncol(t(data.norm)), nrow(t(data.norm)), opt.lambda)
           fig+scale_x_log10()+ scale_y_log10()      
                     
 ##  Plot the network 
+sum(p.opt<=0.001)
+sum(p.UNSHRUNK<=0.001)
+          
 hist(p.adjust(p = p.opt, method = 'BH', n = length(p.opt) ) )
 hist(p.adjust(p = p.UNSHRUNK, method = 'BH', n = length(p.UNSHRUNK) ) , add=T, col=rgb(1, 0, 0, 0.5))
 
 hist(p.opt, 20 )
 hist(p.UNSHRUNK , add=T, col=rgb(1, 0, 0, 0.5))          
+
+res = data.frame('magnitude' = unshrunk.pcor,
+                 'pvalue'= p.standard(r = unshrunk.pcor,
+                                      p = p, n = n)
+)
+res2 = data.frame('magnitude' = opt.pcor,
+                  'pvalue'=  p.shrunk(r = opt.pcor, n = n, p = p, lambda = opt.lambda))
+
+with(res, plot(magnitude,-log10(pvalue), pch=20, main="Volcano plot",
+               xlim=c(-1,1), ylim=c(0,8),  col=rgb(0,0,0,0.25) ))
+with(res2, points(magnitude,-log10(pvalue), pch=20, main="Volcanoplot",
+                  xlim=c(-1,1), col=rgb(1,0,0,0.15)))
+abline(h = -log10(0.001), lty=2)
+abline(v = c(-0.1,0.1), lty=2)
 
 GGM <- vec2sm( p.opt < 0.001) +
  2 * vec2sm( p.UNSHRUNK  < 0.001)
@@ -1405,8 +1405,9 @@ plot(
 
 sum(p.opt < 0.001)
 sum(p.UNSHRUNK  < 0.001)
+
 # Number of nodes
-sig.shrunk = names[ unique( sm.index(diag(p))[p.opt < 0.001]  ) ]
+sig.shrunk = names[ unique( sm.index(diag(p))[p.opt < 0.001] ) ]
 #all_new_gene$external_gene_name[ unique( sm.index(diag(p))[p.opt < 0.001]  ) ]
 length(sig.shrunk)
 sig.unshrunk =  names[ unique( sm.index(diag(p))[ p.UNSHRUNK  < 0.001 ]  ) ]
@@ -1480,203 +1481,6 @@ setdiff(enrichmentKEGG.shrunk$term_description[enrichmentKEGG.shrunk$pvalue_fdr<
 
 # unshrunk has 906 gos
 
-#write.table(x = enrichmentGO.unshrunk, file = 'GOmmus_UNSHRUNK.txt', quote = F, sep = '\t', col.names = T, row.names = F)
-#write.table(x = enrichmentGO.shrunk, file = 'GOmmus_SHRUNK.txt', quote = F, sep = '\t', col.names = T, row.names = F)
-#write.table(x = enrichmentKEGG.unshrunk[enrichmentKEGG.unshrunk$pvalue_fdr<0.05,] , file = 'KEGGmmus_UNSHRUNK.txt', quote = F, sep = '\t', col.names = T, row.names = F)
-#write.table(x = enrichmentKEGG.shrunk[enrichmentKEGG.shrunk$pvalue_fdr<0.05,] , file = 'KEGGmmus_SHRUNK.txt', quote = F, sep = '\t', col.names = T, row.names = F)
-
-
-
-#.........................................................
-# Extra Real data 2.2: Botomly- Additional cross comparison 
-#.........................................................
-set.seed(123)
-new_idx = sample(x = c(1:21), size = 10, replace = FALSE)
-# add noisy extra samples
-extra.data = cbind(data.norm , data.norm[ , new_idx] 
-+ data.norm[ , new_idx] *
-        matrix(
-          rnorm(n= dim(data.norm[ , new_idx])[1]*dim(data.norm[ , new_idx])[2],
-                #min=-0.1, max=0.1),
-                mean = 0,
-                sd  = 0.05) ,
-          dim(data.norm[ , new_idx])[1] , dim(data.norm[ , new_idx])[2])
-)
-
-extra.data = t( scale( t( extra.data ) ))
-
-plot(density(data.norm), lwd=3)
-lines(density(extra.data), col=rgb(0.5, 1, 0, 0.5), lwd=8)
-
-unshrunk.pcor1 <- unshrink_GGM(  t(data.norm), PLOT = FALSE )
-unshrunk.pcor2 <- unshrink_GGM(  t(extra.data ), PLOT = FALSE )
-
-opt.pcor1 <-sm2vec( pcor.shrink(  t(data.norm ), verbose = FALSE ) )
-opt.pcor2 <-sm2vec( pcor.shrink(  t(extra.data  ), verbose = FALSE ) )
-opt.lambda1 <-attr( pcor.shrink(  t(data.norm ), verbose = FALSE ),"lambda" )
-opt.lambda2 <-attr( pcor.shrink(  t(extra.data ), verbose = FALSE ),"lambda" )
-
-# Compare the coefficients. Cohen gives empty nets
-p.UNSHRUNK <- abs(unshrunk.pcor1)#
-p.UNSHRUNK2 <- abs(unshrunk.pcor2)#
-p.opt <-  abs(opt.pcor1)
-p.opt2 <- abs(opt.pcor2)
-
-id <- sm.index(matrix(0, p , p), diag = FALSE)
-df <- data.frame(id[, 1], id[, 2])
-
-
-Method <- c(rep("Un-shrunk",p*(p-1)*0.5 ), rep("Shrunk",p*(p-1)*0.5 ))
-  
-scat.pval <- 
-  data.frame("Method"=Method, 
-             "pcor"= c(c(p.UNSHRUNK -p.UNSHRUNK2),c(p.opt-p.opt2))
-             )
-
-fig <- ggplot(scat.pval, aes(x = pcor, fill= Method )) +
-        geom_density(alpha = 0.5, size = 1)+
-        theme_classic(base_size = 14, base_family = "")+
-        geom_vline(xintercept = 0 , size=1)+
-  scale_color_manual(values= c(rgb(0, 0, 0, 0),  rgb(0.75, 0.75, 0.75, 1)  ))+
-  scale_fill_manual(values= c(rgb(0, 0, 0, 0),  rgb(0.5, 0.5, 0.5, 1) )) 
-
-
-
-#emf(file = paste0("MM_comparedn1n2.emf"), width = 5, height = 5 )
-fig
-#dev.off()
-
-
-# scatter
-Method <- c(rep("Un_shrunk",p*(p-1)*0.5 ), rep("Shrunk",p*(p-1)*0.5 ))
-scat.pval <- 
-  data.frame("Method"= Method, 
-             "n1"= c(p.UNSHRUNK, p.opt) ,"n2"= c(p.UNSHRUNK2, p.opt2))
-  
-fig<-ggplot(scat.pval, aes(x = n1, y = n2, color=Method)) + 
-  geom_point(aes(x = scat.pval$n1, y = scat.pval$n2), size = 1.5) +
-  theme_classic(base_size = 14, base_family = "") +
-  geom_hline(yintercept= 0.1, linetype="dashed", color = "black")+
-  geom_vline(xintercept= 0.1, linetype="dashed", color = "black")+
-  labs(x = "|pcor|_n1", y = "|pcor|_n2") +
-  geom_abline(
-    intercept = 0,
-    slope = 1,
-    size = 1 ,
-    linetype = "dashed",
-    color = "black") +
-  theme(legend.position="none"#,
-        #legend.text=element_text(size=14),
-        #legend.title=element_text(size=14),
-        #legend.key = element_rect(fill = "white", colour = "black")
-     )  #+
-    #     scale_y_continuous(limits =c(0, max(c(p.UNSHRUNK, p.opt, p.UNSHRUNK2, p.opt2))) ,breaks = round(seq(0, 1, by = 0.025),3))+
-    #     scale_x_continuous(limits =c(0, max(c(p.UNSHRUNK, p.opt, p.UNSHRUNK2, p.opt2))) ,breaks = round(seq(0, 1, by = 0.025),3))
-
-
-#emf(file = paste0("MM_comparedn1n2_2.emf"), width = 4, height = 4 )
-fig+
-  scale_color_manual(values= c(rgb(0.75, 0.75, 0.75, 0.5), rgb(0.25, 0.25, 0.25, 0.95) ))+
-  scale_fill_manual(values= c(rgb(0.75, 0.75, 0.75, 0.5), rgb(0.25, 0.25, 0.25, 0.95) ))
-
-dev.off()
-
-lm(unshrunk.pcor1~unshrunk.pcor2)
-lm(opt.pcor1~opt.pcor2)
-
-cor(unshrunk.pcor1, unshrunk.pcor2)
-cor(opt.pcor1, opt.pcor2)
-
-sum(unshrunk.pcor1-unshrunk.pcor2)^2
-sum(opt.pcor1-opt.pcor2)^2
-
-#
-# Compare the pvalues
-#
-p.UNSHRUNK <- p.shrunk(unshrunk.pcor1, ncol(t(data.norm )), nrow(t(data.norm )), 1e-14)#abs(unshrunk.pcor1)#
-p.UNSHRUNK2 <- p.shrunk(unshrunk.pcor2, ncol(t(data.norm )), nrow(t(data.norm )), 1e-14) #abs(unshrunk.pcor2)#
-p.opt <-  p.shrunk(opt.pcor1, ncol(t(extra.data )), nrow(t(extra.data )), opt.lambda1)#abs(opt.pcor1)
-p.opt2 <- p.shrunk(opt.pcor2, ncol(t(extra.data )), nrow(t(extra.data )), opt.lambda2)#abs(opt.pcor2)
-
-id <- sm.index(matrix(0, p , p), diag = FALSE)
-df <- data.frame(id[, 1], id[, 2])
-
-
-Method <- c(rep("Un-shrunk",p*(p-1)*0.5 ), rep("Shrunk",p*(p-1)*0.5 ))
-
-scat.pval <- 
-  data.frame("Method"=Method, 
-             "pcor"= c(c(p.UNSHRUNK -p.UNSHRUNK2),c(p.opt-p.opt2))
-  )
-
-fig <- ggplot(scat.pval, aes(x = pcor, fill= Method )) +
-  geom_density(alpha = 0.5, size = 1)+
-  theme_classic(base_size = 14, base_family = "")+
-  geom_vline(xintercept = 0 , size=1)+
-  scale_color_manual(values= c(rgb(0, 0, 0, 0),  rgb(0.75, 0.75, 0.75, 1)  ))+
-  scale_fill_manual(values= c(rgb(0, 0, 0, 0),  rgb(0.5, 0.5, 0.5, 1) )) 
-
-
-
-#emf(file = paste0("MM_comparedn1n2_pvaldensity.emf"), width = 5, height = 5 )
-fig
-dev.off()
-
-#
-id <- sm.index(matrix(0, p , p), diag = FALSE)
-df <- data.frame(id[, 1], id[, 2])
-
-short_names = substr(names, start=12, stop=length(names))#names
-
-edge <-
-  data.frame(paste (short_names[df[, 1]], short_names[df[, 2]], sep = "-", collapse = NULL))
-scat.pval <- 
-  data.frame(edge, -log10(p.UNSHRUNK), -log10(p.UNSHRUNK2))
-colnames(scat.pval) <- c("Edges", "n1", "n2")
-
-scat.pval$Edges <- as.character(scat.pval$Edges)
-scat.pval$Edges[which(scat.pval$'n1' < 100 &
-                        scat.pval$'n2'< 100)] <- NA
-
-scat.pval2 =  scat.pval
-scat.pval2$'n1' = -log10(p.opt)
-scat.pval2$'n2' = -log10(p.opt2)
-
-
-fig<-ggplot(scat.pval, aes(x = n2, y = n1),
-            ylim = c(0, max(scat.pval$'n2', scat.pval$'n1') ),
-            xlim = c(0, max(scat.pval$'n2' ,  scat.pval$'n1'))) + 
-  geom_point(aes(x = scat.pval$'n2', y = scat.pval$'n1'), size = 1, color = rgb(0.25, 0.25, 0.25, 0.95) ) +
-  geom_point(aes(x = scat.pval2$'n2', y = scat.pval2$'n1'), size = 1, color= rgb(0.75, 0.75, 0.75, 0.5)) +
-  geom_hline(yintercept=-log10(0.05), linetype="dashed", color = "black")+
-  geom_vline(xintercept=-log10(0.05) , linetype="dashed", color = "black")+
-  theme_classic(base_size = 14, base_family = "") +
-  geom_text(aes(label = scat.pval$Edges), 
-            size = 5, nudge_x = 0, nudge_y = 0.1)+
-  labs(x = "-log 10 pvals n2", y = "-log 10 pvals n1") +
-  geom_abline(
-    intercept = 0,
-    slope = 1,
-    size = 1.5 ,
-    linetype = "dashed",
-    color = "black") 
-
-
-
-#emf(file = paste0("MM_comparedn1n2_2_pval.emf"), width = 4, height = 4 )
-fig
-#dev.off()
-
-lm(p.UNSHRUNK~p.UNSHRUNK2)
-lm(p.opt~p.opt2)
-
-cor(p.UNSHRUNK, p.UNSHRUNK2)
-cor(p.opt, p.opt2)
-
-sum(p.UNSHRUNK-p.UNSHRUNK2)^2
-sum(opt.pcor1-opt.pcor2)^2
-
-
 #......................................................
 # ..............Supplementary material..................
 #........................................................
@@ -1685,43 +1489,58 @@ sum(opt.pcor1-opt.pcor2)^2
 #......................................
 # Figure S1: a linear correction is not enough
 # ......................................
+library(GeneNet)
+library(stats4)
+library(devEMF)
 
+# Correlation matrix
+m <- matrix(c(
+  1,
+  1 / 2,-1 / 4,-1 / 8,
+  1 / 2,
+  1,-3 / 4,-3 / 4,-1 / 4,-3 / 4,
+  1,
+  3 / 4,-1 / 8,-3 / 4,
+  3 / 4,
+  1
+),
+4,
+4)
+# The toy matrix has eigenvalues, 2-norm condition number, and the real partial correlation 
+m
+solve(m)*97
 
-rm(list=ls())
+eigen(m)$values
+kappa(m)
+pcor0 <- sm2vec(cor2pcor(m))
 
-library("GeneNet")
-library("MASS")
-
-set.seed(502)
-# Check pcor between node 2 and node 6
-p = 5
-n = 10
-etaA=0.2
-true.pcor <- ggm.simulate.pcor(p, etaA = etaA)
-data.sim <- ggm.simulate.data(n, true.pcor)
-
-lambda=c(0:20)/20
+# Reconstruct the shrunk partial correlations
+lambda <- c(1:20) / 20
 lambda =  lambda[-length(lambda)]
-lambda =  lambda[-1]
-
 pcors <- lapply(lambda , function(z) {
-  return(sm2vec(cor2pcor((1 - z) *cor(data.sim)  + z * diag(ncol(
-    cor(data.sim)
+  return(sm2vec(cor2pcor((1 - z) * m + z * diag(ncol(
+    m
   )))))
   
 })
+
 pcors <-
-  matrix(unlist(pcors), 0.5 * ncol(cor(data.sim)) * (ncol(cor(data.sim)) - 1), length(lambda))
+  matrix(unlist(pcors), 0.5 * ncol(m) * (ncol(m) - 1), length(lambda))
+
+pcors <-
+  matrix(unlist(pcors), 0.5 * ncol(m) * (ncol(m) - 1), length(lambda))
 pcors = pcors%*%diag(1/(1-lambda) )
-pcor0 <-sm2vec(true.pcor)
+pcor0 <-sm2vec(m)
+
+emf(file = paste0("FigureS1.emf"), width = 5, height = 5 )
 
 plot.ts(
   t(pcors),
   plot.type = "single",
   type = "l",
-  lw = 3,
-  lty = c(1:2),#,1:2,
-  col = rainbow(0.5 * ncol(cor(data.sim)) * (ncol(cor(data.sim)) - 1)),#"grey40", #
+  lw = 4,
+  lty = c(1:2),
+  col = "grey40",# rainbow(0.5 * ncol(m) * (ncol(m) - 1)),
   ylab = "partial correlation",
   xlab = "LW - shrinkage",
   ylim = c(-1, 1),
@@ -1733,8 +1552,8 @@ points(
   pcor0,
   pch = 20,
   cex = 2,#,
-  #bg="grey"
-  col = rainbow(0.5 * ncol(cor(data.sim)) * (ncol(cor(data.sim)) - 1))
+  bg="grey",
+  col = "grey40"# rainbow(0.5 * ncol(m) * (ncol(m) - 1))
 )
 axis(2)
 axis(1,
@@ -1745,8 +1564,7 @@ axis(1,
        length.out = length(lambda)
      ))
 box()
-abline(v=19*c(round(attr(pcor.shrink(data.sim),"lambda" ),2)))
-
+dev.off()
 
 #........................................
 # Figure S2) and Supplementary Table S1
@@ -2134,9 +1952,9 @@ s = rnorm(n=s.size, mean = 5, sd = 5)
  
  
  set.seed(123)
- p<-200
- n1<- 40# c(1:10)*10
- etaA<- 0.003 # p=100 eta 0.005, p=30 eta 0.1
+ p<-10
+ n1<- 50# c(1:10)*10
+ etaA<- 0.3 # p=100 eta 0.005, p=30 eta 0.1
  
  TrueNET  <- ggm.simulate.pcor(p, etaA)#ggm.simulate.pcor.MODIF
  TrueNET
@@ -2167,7 +1985,7 @@ s = rnorm(n=s.size, mean = 5, sd = 5)
  
  unshrunk1 <-
    lapply(sim.data1, function(x) {
-     unshrink_GGM (x, PLOT = F)
+     unshrink_GGM(x, l_0 = 0.01,PLOT = F , corrected = F)
    })
  
  
@@ -2195,8 +2013,8 @@ s = rnorm(n=s.size, mean = 5, sd = 5)
  simp_pr1 <- simple_PR(c(sm2vec(TrueNET)!=0), abs(GGM1.shrunk[[1]]) )
  Usimp_pr1 <- simple_PR(c(sm2vec(TrueNET)!=0), abs(unshrunk1[[1]]) )
  
- library("devEMF")
- emf(file = paste0("ROC_p",p, "n_", n1," etA_",etaA,".emf"), width = 4, height = 4 )
+ #library("devEMF")
+ #emf(file = paste0("ROC_p",p, "n_", n1," etA_",etaA,".emf"), width = 4, height = 4 )
  plot(simp_roc1$FPR, simp_roc1$TPR, col="black", type = "b", cex=1.5, ylim=c(0, 1),xlim=c(0, 1),
       ylab="TPR", xlab="FPR")
  lines(Usimp_roc1$FPR, Usimp_roc1$TPR, col="blue", pch=20, type = "b")
@@ -2211,7 +2029,7 @@ s = rnorm(n=s.size, mean = 5, sd = 5)
  
  
  library("devEMF")
- emf(file = paste0("PR_p",p, "n_", n1," etA_",etaA,".emf"), width = 4, height = 4 )
+# emf(file = paste0("PR_p",p, "n_", n1," etA_",etaA,".emf"), width = 4, height = 4 )
  plot(simp_pr1$PPV, simp_pr1$TPR, col="black", type = "b", cex=1.5, ylim=c(0, 1), xlim=c(0, 1),
       ylab="PPV", xlab="TPR")
  lines(Usimp_pr1$PPV, Usimp_pr1$TPR, col="blue", pch=20, type = "b")
